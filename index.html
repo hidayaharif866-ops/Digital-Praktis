@@ -488,12 +488,12 @@ body.dark .insight-card{background:var(--card);}
       <div class="af-heading" style="text-align:center; margin-top:20px;">Selamat Datang</div>
       <div class="af-sub" style="text-align:center;">Masuk untuk melanjutkan kelola keuanganmu</div>
       <div class="af-field">
-        <label>Email</label>
-        <div class="af-field-box" id="loginEmailBox">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M3 7l9 6 9-6"/></svg>
-          <input type="email" id="loginEmail" placeholder="nama@email.com" autocomplete="email">
+        <label>Nomor HP</label>
+        <div class="af-field-box" id="loginPhoneBox">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg>
+          <input type="tel" id="loginPhone" placeholder="08xxxxxxxxxx" autocomplete="tel">
         </div>
-        <div class="af-field-err" id="loginEmailErr">Masukkan email yang valid</div>
+        <div class="af-field-err" id="loginPhoneErr">Nomor HP tidak valid</div>
       </div>
       <div class="af-field">
         <label>Password</label>
@@ -504,13 +504,7 @@ body.dark .insight-card{background:var(--card);}
         </div>
         <div class="af-field-err" id="loginPassErr">Password wajib diisi</div>
       </div>
-      <a class="af-forgot" onclick="go('forgot')">Lupa Password?</a>
       <button class="btn-primary" id="loginBtn" onclick="handleLogin()"><span class="spin"></span><span>Masuk</span></button>
-      <div class="af-divider">atau lanjutkan dengan</div>
-      <button class="btn-outline" onclick="handleGoogleLogin()">
-        <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M23.5 12.3c0-.85-.08-1.66-.22-2.44H12v4.62h6.46c-.28 1.5-1.13 2.77-2.4 3.62v3h3.87c2.27-2.09 3.57-5.17 3.57-8.8z"/><path fill="#34A853" d="M12 24c3.24 0 5.96-1.07 7.94-2.9l-3.87-3c-1.08.72-2.46 1.15-4.07 1.15-3.13 0-5.78-2.11-6.73-4.96H1.27v3.11C3.24 21.3 7.27 24 12 24z"/><path fill="#FBBC05" d="M5.27 14.29A7.2 7.2 0 014.9 12c0-.79.14-1.56.37-2.29V6.6H1.27A11.98 11.98 0 000 12c0 1.93.46 3.76 1.27 5.4l4-3.11z"/><path fill="#EA4335" d="M12 4.75c1.76 0 3.34.6 4.59 1.79l3.44-3.44C17.95 1.19 15.24 0 12 0 7.27 0 3.24 2.7 1.27 6.6l4 3.11C6.22 6.86 8.87 4.75 12 4.75z"/></svg>
-        Login dengan Google
-      </button>
       <button class="btn-outline" id="fpLoginBtn" onclick="handleBiometricLogin()" style="display:none;">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="1.8"><path d="M12 11v2c0 3-1 5-3 6.5M12 11a4 4 0 018 0v1c0 1.5-.1 2.8-.4 4M8 11a4 4 0 014-4"/><path d="M12 4a8 8 0 00-8 8c0 1.7-.3 3.3-1 4.5M20 11a8 8 0 00-2.2-5.5"/></svg>
         Login dengan Fingerprint
@@ -519,7 +513,7 @@ body.dark .insight-card{background:var(--card);}
     </div>
   </section>
 
-  <section class="screen" id="screen-forgot">
+  <section class="screen" id="screen-forgot" style="display:none !important;">
     <div class="af-content">
       <div class="af-topline"><button class="af-back" onclick="go('login')">←</button></div>
       <div class="af-heading">Lupa Password</div>
@@ -539,7 +533,7 @@ body.dark .insight-card{background:var(--card);}
     <div class="af-content">
       <div class="af-topline"><button class="af-back" onclick="go('login')">←</button></div>
       <div class="af-heading">Buat Akun</div>
-      <div class="af-sub">Isi data diri untuk mulai kelola keuanganmu bersama AI.</div>
+      <div class="af-sub">Buat akun dengan nama, nomor HP, dan password. Tidak perlu email atau kode OTP.</div>
       <div class="af-field">
         <label>Nama Lengkap</label>
         <div class="af-field-box" id="regNameBox">
@@ -547,14 +541,6 @@ body.dark .insight-card{background:var(--card);}
           <input type="text" id="regName" placeholder="Nama sesuai identitas">
         </div>
         <div class="af-field-err" id="regNameErr">Nama lengkap wajib diisi</div>
-      </div>
-      <div class="af-field">
-        <label>Email</label>
-        <div class="af-field-box" id="regEmailBox">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M3 7l9 6 9-6"/></svg>
-          <input type="email" id="regEmail" placeholder="nama@email.com">
-        </div>
-        <div class="af-field-err" id="regEmailErr">Email sudah terdaftar</div>
       </div>
       <div class="af-field">
         <label>Nomor HP</label>
@@ -587,7 +573,7 @@ body.dark .insight-card{background:var(--card);}
     </div>
   </section>
 
-  <section class="screen" id="screen-otp">
+  <section class="screen" id="screen-otp" style="display:none !important;">
     <div class="af-content" id="otpFormWrap">
       <div class="af-topline"><button class="af-back" onclick="go('register')">←</button></div>
       <div class="af-heading">Verifikasi Email</div>
@@ -1130,38 +1116,33 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 // (tanpa await), jadi kita simpan salinannya di sini setiap kali status
 // auth berubah, supaya fungsi-fungsi itu tidak perlu diubah jadi async.
 let currentUser = null;
+function normalizePhone(v){
+  let p = String(v || '').replace(/[^0-9+]/g,'');
+  if(p.startsWith('08')) p = '+62' + p.slice(1);
+  else if(p.startsWith('62')) p = '+' + p;
+  return p;
+}
 function flattenSupabaseUser(u){
   if(!u) return null;
   const meta = u.user_metadata || {};
-  return { id:u.id, email:u.email, full_name: meta.full_name || '', phone: meta.phone || '', email_verified: !!u.email_confirmed_at };
+  return { id:u.id, email:u.email || '', full_name: meta.full_name || '', phone: u.phone || meta.phone || '', email_verified: !!u.phone_confirmed_at };
 }
 
 const authClient = {
   auth:{
-    async signUp({email,password,full_name,phone}){
-      const { data, error } = await sb.auth.signUp({ email, password, options:{ data:{ full_name, phone } } });
+    async signUp({password,full_name,phone}){
+      const normalizedPhone = normalizePhone(phone);
+      const { data, error } = await sb.auth.signUp({ phone: normalizedPhone, password, options:{ data:{ full_name, phone: normalizedPhone } } });
       if(error) throw error;
-      // Supabase tidak melempar error kalau email sudah terdaftar & terverifikasi
-      // (demi keamanan, supaya orang tidak bisa mengecek email siapa saja yang
-      // sudah punya akun) — melainkan mengembalikan user dengan identities kosong.
       if(data.user && Array.isArray(data.user.identities) && data.user.identities.length===0){
-        throw new Error('EMAIL_EXISTS');
+        throw new Error('PHONE_EXISTS');
       }
-      return { user: flattenSupabaseUser(data.user) };
-    },
-    async verifyOtp({email, token}){
-      const { data, error } = await sb.auth.verifyOtp({ email, token, type:'signup' });
-      if(error) throw error;
       currentUser = flattenSupabaseUser(data.user);
-      return { verified:true };
+      return { user: currentUser, session: data.session };
     },
-    async resendOtp({email}){
-      const { error } = await sb.auth.resend({ type:'signup', email });
-      if(error) throw error;
-      return { sent:true };
-    },
-    async signInWithPassword({email,password}){
-      const { data, error } = await sb.auth.signInWithPassword({ email, password });
+    async signInWithPassword({phone,password}){
+      const normalizedPhone = normalizePhone(phone);
+      const { data, error } = await sb.auth.signInWithPassword({ phone: normalizedPhone, password });
       if(error) throw error;
       currentUser = flattenSupabaseUser(data.user);
       return { user: currentUser };
@@ -1225,23 +1206,23 @@ function finishOnboarding(){
 }
 
 async function handleLogin(){
-  const email = document.getElementById('loginEmail').value.trim();
+  const phone = document.getElementById('loginPhone').value.trim();
   const pass = document.getElementById('loginPass').value;
+  const phoneValid = /^0[0-9]{9,13}$/.test(phone) || /^\+62[0-9]{9,13}$/.test(phone);
   let ok = true;
-  if(!validEmail(email)){ setFieldError('loginEmailBox','loginEmailErr',true); ok=false; } else setFieldError('loginEmailBox','loginEmailErr',false);
+  setFieldError('loginPhoneBox','loginPhoneErr', !phoneValid); if(!phoneValid) ok=false;
   if(!pass){ setFieldError('loginPassBox','loginPassErr',true); ok=false; } else setFieldError('loginPassBox','loginPassErr',false);
   if(!ok) return;
   const btn = document.getElementById('loginBtn'); btn.classList.add('loading'); btn.disabled=true;
   try{
-    const { user } = await authClient.auth.signInWithPassword({email, password:pass});
+    await authClient.auth.signInWithPassword({phone, password:pass});
     btn.classList.remove('loading'); btn.disabled=false;
-    if(!user.email_verified){ startOtpFlow(user); return; }
     finishAuthAndEnterApp();
   }catch(err){
     btn.classList.remove('loading'); btn.disabled=false;
-    toast('Email atau password salah');
+    toast('Nomor HP atau password salah');
     setFieldError('loginPassBox','loginPassErr',true);
-    document.getElementById('loginPassErr').textContent = 'Email atau password salah';
+    document.getElementById('loginPassErr').textContent = 'Nomor HP atau password salah';
   }
 }
 function handleGoogleLogin(){ toast('Login Google tersedia setelah OAuth Supabase terhubung'); }
@@ -1264,14 +1245,12 @@ async function handleForgotPassword(){
 let pendingUser = null;
 async function handleRegister(){
   const name = document.getElementById('regName').value.trim();
-  const email = document.getElementById('regEmail').value.trim();
   const phone = document.getElementById('regPhone').value.trim();
   const pass = document.getElementById('regPass').value;
   const pass2 = document.getElementById('regPass2').value;
   let ok = true;
   setFieldError('regNameBox','regNameErr', !name); if(!name) ok=false;
-  setFieldError('regEmailBox','regEmailErr', !validEmail(email)); if(!validEmail(email)) ok=false;
-  const phoneValid = /^0[0-9]{9,13}$/.test(phone);
+  const phoneValid = /^0[0-9]{9,13}$/.test(phone) || /^\+62[0-9]{9,13}$/.test(phone);
   setFieldError('regPhoneBox','regPhoneErr', !phoneValid); if(!phoneValid) ok=false;
   const passValid = pass.length>=8 && /[A-Za-z]/.test(pass) && /[0-9]/.test(pass);
   setFieldError('regPassBox','regPassErr', !passValid); if(!passValid) ok=false;
@@ -1280,13 +1259,14 @@ async function handleRegister(){
   if(!ok) return;
   const btn = document.getElementById('regBtn'); btn.classList.add('loading'); btn.disabled=true;
   try{
-    const { user } = await authClient.auth.signUp({email, password:pass, full_name:name, phone});
+    await authClient.auth.signUp({password:pass, full_name:name, phone});
     btn.classList.remove('loading'); btn.disabled=false;
-    startOtpFlow(user);
+    toast('Akun berhasil dibuat');
+    setTimeout(()=>finishAuthAndEnterApp(), 500);
   }catch(err){
     btn.classList.remove('loading'); btn.disabled=false;
-    if(err.message==='EMAIL_EXISTS'){ setFieldError('regEmailBox','regEmailErr',true); toast('Email sudah terdaftar'); }
-    else toast('Gagal membuat akun, coba lagi');
+    if(err.message==='PHONE_EXISTS' || err.code==='phone_exists') toast('Nomor HP sudah terdaftar');
+    else { console.error(err); toast('Gagal membuat akun: '+(err.message || 'coba lagi')); }
   }
 }
 

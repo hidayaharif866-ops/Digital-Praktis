@@ -1242,6 +1242,25 @@ const authClient = {
 
 function getCurrentUser(){ return currentUser; }
 
+// Jaga currentUser tetap sinkron dengan status sesi Supabase yang sesungguhnya.
+// Tanpa listener ini, kalau sesi berubah di background (mis. refresh token
+// gagal / sesi dicabut / logout dari tab lain), variabel currentUser di sini
+// bisa "nyangkut" tidak sinkron dan menyebabkan error null saat fungsi
+// create/update mengakses currentUser.id.
+const AUTH_ONLY_SCREENS = ['splash','onboarding','login','forgot','register','pin','biometric','quicklogin'];
+sb.auth.onAuthStateChange((event, session) => {
+  const hadUser = !!currentUser;
+  currentUser = session ? flattenSupabaseUser(session.user) : null;
+  if((event === 'SIGNED_OUT' || !session) && hadUser){
+    const active = document.querySelector('.screen.active');
+    const activeName = active ? active.id.replace('screen-','') : '';
+    if(!AUTH_ONLY_SCREENS.includes(activeName)){
+      toast('Sesi berakhir, silakan login ulang');
+      go('login');
+    }
+  }
+});
+
 function togglePass(id, btn){
   const inp = document.getElementById(id);
   const hidden = inp.type === 'password';
@@ -1681,6 +1700,7 @@ const dataService = {
   },
   getTransactions(){ return this._cache.slice(); },
   createTransaction(tx){
+    if(!currentUser) throw new Error('Sesi berakhir, silakan login ulang');
     validateTransaction(tx);
     const saved = Object.assign({}, tx, { id:crypto.randomUUID(), user_id:currentUser.id, created_at:new Date().toISOString() });
     this._cache.unshift(saved);
@@ -1820,6 +1840,7 @@ const notesService = {
   },
   getAll(){ return this._cache.slice(); },
   create(note){
+    if(!currentUser) throw new Error('Sesi berakhir, silakan login ulang');
     validateNote(note);
     const saved = Object.assign({}, note, { id:crypto.randomUUID(), user_id:currentUser.id, created_at:new Date().toISOString(), pinned: !!note.pinned, archived: false });
     this._cache.unshift(saved);
@@ -2073,6 +2094,7 @@ const agendaService = {
   },
   getAll(){ return this._cache.slice(); },
   create(a){
+    if(!currentUser) throw new Error('Sesi berakhir, silakan login ulang');
     validateAgenda(a);
     const now = new Date().toISOString();
     const saved = Object.assign({}, a, {
@@ -2644,6 +2666,7 @@ const lemburService = {
   },
   getAll(){ return this._cache.slice(); },
   create(l){
+    if(!currentUser) throw new Error('Sesi berakhir, silakan login ulang');
     validateLembur(l);
     const durasi_jam = computeLemburDurationHours(l.jam_mulai, l.jam_selesai);
     const now = new Date().toISOString();

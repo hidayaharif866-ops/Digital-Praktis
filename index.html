@@ -765,7 +765,7 @@ body.dark .insight-card{background:var(--card);}
       </div>
       <input type="file" id="avatarFileInput" accept="image/*" style="display:none" onchange="handleAvatarFile(event)">
       <div class="settings-group">
-        <div class="set-row"><div class="set-ic">👤</div><div class="set-label">Nama Pengguna<div class="set-sub">Arif</div></div></div>
+        <div class="set-row"><div class="set-ic">👤</div><div class="set-label">Nama Pengguna<div class="set-sub" id="setNamaPenggunaSub">Arif</div></div></div>
         <div class="set-row"><div class="set-ic">💱</div><div class="set-label">Mata Uang<div class="set-sub">Rupiah (IDR)</div></div></div>
         <div class="set-row"><div class="set-ic">🏷️</div><div class="set-label">Kategori<div class="set-sub">18 kategori aktif</div></div></div>
         <div class="set-row"><div class="set-ic">💳</div><div class="set-label">Metode Pembayaran<div class="set-sub">Tunai, Transfer, E-Wallet</div></div></div>
@@ -1525,6 +1525,7 @@ async function enterAppHome(){
     const setAv = document.getElementById('settingsAvatarBox');
     if(setAv && !setAv.querySelector('img')) setAv.textContent = initial;
     const pn = document.getElementById('settingsPname'); if(pn) pn.textContent = user.full_name;
+    const pnSub = document.getElementById('setNamaPenggunaSub'); if(pnSub) pnSub.textContent = user.full_name || 'Pengguna';
     const pm = document.getElementById('settingsPmail'); if(pm) pm.textContent = user.email;
   }
   const adminGroup = document.getElementById('adminMenuGroup');

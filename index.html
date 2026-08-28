@@ -808,7 +808,7 @@ body.dark .insight-card{background:var(--card);}
         <div class="set-row" onclick="go('lembur')"><div class="set-ic">⏰</div><div class="set-label">Lembur<div class="set-sub" id="actLemburSub">Catat jam & pendapatan lembur</div></div></div>
         <div class="set-row" onclick="go('agenda')"><div class="set-ic">📅</div><div class="set-label">Agenda & Pengingat<div class="set-sub" id="actAgendaSub">Jadwal & pengingat keuangan</div></div></div>
         <div class="set-row" onclick="toast('Fitur To-Do segera hadir')"><div class="set-ic">✅</div><div class="set-label">To-Do<div class="set-sub">Daftar tugas harian</div></div></div>
-        <div class="set-row" onclick="toast('Fitur Jurnal segera hadir')"><div class="set-ic">📖</div><div class="set-label">Jurnal<div class="set-sub">Jurnal harian & mood</div></div></div>
+        <div class="set-row" onclick="go('journal')"><div class="set-ic">📖</div><div class="set-label">Jurnal<div class="set-sub" id="actJurnalSub">Jurnal harian & mood</div></div></div>
       </div>
       <div class="section-row"><h3>Asisten</h3></div>
       <div class="settings-group">
@@ -843,6 +843,32 @@ body.dark .insight-card{background:var(--card);}
         <button class="chip" data-a="archived" onclick="setNoteArchiveFilter('archived',this)">Arsip</button>
       </div>
       <div id="notesListWrap" style="margin-top:6px;"></div>
+    </div>
+  </section>
+
+  <section class="screen" id="screen-journal">
+    <div class="topbar">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <button class="icon-btn" onclick="go('activities')"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M15 19l-7-7 7-7"/></svg></button>
+        <h2>Jurnal</h2>
+      </div>
+      <button class="icon-btn" onclick="openAddJournal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+    </div>
+    <div class="content">
+      <div class="search-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="text" id="journalSearch" placeholder="Cari jurnal..." oninput="renderJournalList()">
+      </div>
+      <div class="filter-row" id="journalMoodFilterRow">
+        <button class="chip active" data-m="all" onclick="setJournalMoodFilter('all',this)">Semua</button>
+        <button class="chip" data-m="senang" onclick="setJournalMoodFilter('senang',this)">😄 Senang</button>
+        <button class="chip" data-m="bersyukur" onclick="setJournalMoodFilter('bersyukur',this)">🙏 Bersyukur</button>
+        <button class="chip" data-m="biasa" onclick="setJournalMoodFilter('biasa',this)">😐 Biasa</button>
+        <button class="chip" data-m="lelah" onclick="setJournalMoodFilter('lelah',this)">😩 Lelah</button>
+        <button class="chip" data-m="sedih" onclick="setJournalMoodFilter('sedih',this)">😢 Sedih</button>
+        <button class="chip" data-m="cemas" onclick="setJournalMoodFilter('cemas',this)">😟 Cemas</button>
+      </div>
+      <div id="journalListWrap" style="margin-top:6px;"></div>
     </div>
   </section>
 
@@ -988,6 +1014,23 @@ body.dark .insight-card{background:var(--card);}
         <button class="ghost-btn" onclick="toggleNotePin()"><span id="notePinLabel">📌 Pin Catatan</span></button>
         <button class="ghost-btn" onclick="toggleNoteArchive()"><span id="noteArchiveLabel">🗄️ Arsipkan</span></button>
         <button class="ghost-btn" style="color:var(--expense);" onclick="deleteNoteConfirm()">🗑️ Hapus Catatan</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay" id="journalOverlay" onclick="closeJournalSheet()"></div>
+  <div class="sheet" id="journalSheetEl" style="max-height:92%;">
+    <div class="sheet-handle"></div>
+    <div class="sheet-head"><h3 id="journalSheetTitle">Jurnal Baru</h3>
+      <button class="icon-btn" onclick="closeJournalSheet()"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="sheet-body">
+      <div class="field"><label>Tanggal</label><input class="input-box" id="journalDateInput" type="date"></div>
+      <div class="field"><label>Mood</label><div class="cat-grid" id="journalMoodGrid"></div></div>
+      <div class="field"><label>Ceritakan harimu</label><textarea class="input-box" id="journalContentInput" rows="6" placeholder="Apa yang terjadi hari ini..." style="resize:vertical; min-height:110px;"></textarea></div>
+      <button class="primary-btn" id="journalSaveBtn" onclick="saveJournal()">Simpan Jurnal</button>
+      <div id="journalEditActions" style="display:none; margin-top:4px;">
+        <button class="ghost-btn" style="color:var(--expense);" onclick="deleteJournalConfirm()">🗑️ Hapus Jurnal</button>
       </div>
     </div>
   </div>
@@ -1331,8 +1374,8 @@ function handleGoogleLogin(){ toast('Login Google tersedia setelah OAuth Supabas
 async function handleLogoutToLogin(){
   await authClient.auth.signOut();
   // Bersihkan cache data lokal supaya tidak "bocor" kalau nanti akun lain login di perangkat yang sama
-  dataService._cache = []; notesService._cache = []; agendaService._cache = []; lemburService._cache = [];
-  transactions = []; notes = []; agendas = []; lemburEntries = [];
+  dataService._cache = []; notesService._cache = []; agendaService._cache = []; lemburService._cache = []; journalService._cache = [];
+  transactions = []; notes = []; agendas = []; lemburEntries = []; journalEntries = [];
   currentProfile = null;
   const adminGroup = document.getElementById('adminMenuGroup'); if(adminGroup) adminGroup.style.display='none';
   document.getElementById('bottomnav').style.display='none';
@@ -1597,6 +1640,7 @@ async function loadUserDataAndRender(){
     agendaService.init(),
     lemburService.init(),
     lemburSettingsService.init(),
+    journalService.init(),
   ]);
   refreshTransactions();
   refreshNotes();
@@ -1604,6 +1648,7 @@ async function loadUserDataAndRender(){
   updateAgendaBadges();
   refreshLembur();
   renderLemburMonthlyDashboard();
+  refreshJournal();
   renderHome();
 }
 
@@ -1895,6 +1940,190 @@ function updateActivitySummary(){
   if(!el) return;
   const activeCount = notes.filter(n=>!n.archived).length;
   el.textContent = activeCount>0 ? activeCount+' catatan tersimpan' : 'Catatan pribadi & ide';
+}
+
+// ===== Modul Aktivitas: Jurnal =====
+const JOURNAL_MOODS = [
+  {id:'senang', icon:'😄', label:'Senang', color:'#F59E0B'},
+  {id:'bersyukur', icon:'🙏', label:'Bersyukur', color:'#10B981'},
+  {id:'biasa', icon:'😐', label:'Biasa', color:'#94A3B8'},
+  {id:'lelah', icon:'😩', label:'Lelah', color:'#8B5CF6'},
+  {id:'sedih', icon:'😢', label:'Sedih', color:'#3B82F6'},
+  {id:'cemas', icon:'😟', label:'Cemas', color:'#EF4444'}
+];
+function journalMoodInfo(id){ return JOURNAL_MOODS.find(m=>m.id===id) || JOURNAL_MOODS[2]; }
+function validateJournal(j){
+  if(!j || !j.content || !j.content.trim()) throw new Error('Isi jurnal tidak boleh kosong');
+  if(!j.mood || !JOURNAL_MOODS.some(m=>m.id===j.mood)) throw new Error('Pilih mood terlebih dahulu');
+  if(!j.entry_date) throw new Error('Tanggal jurnal tidak valid');
+}
+const journalService = {
+  _cache: [],
+  async init(){
+    this._cache = [];
+    if(!currentUser) return this._cache;
+    const { data, error } = await sb.from('journals').select('*').eq('user_id', currentUser.id).order('entry_date', { ascending:false }).order('created_at', { ascending:false });
+    if(error){ console.error('[JOURNAL] Gagal memuat jurnal dari Supabase:', error); toast('Gagal memuat jurnal dari server'); return this._cache; }
+    this._cache = data || [];
+    debugLog('[JOURNAL] Loaded', this._cache.length, 'jurnal dari Supabase');
+    return this._cache;
+  },
+  getAll(){ return this._cache.slice(); },
+  create(j){
+    if(!currentUser) throw new Error('Sesi berakhir, silakan login ulang');
+    validateJournal(j);
+    const saved = Object.assign({}, j, { id:crypto.randomUUID(), user_id:currentUser.id, created_at:new Date().toISOString() });
+    this._cache.unshift(saved);
+    sb.from('journals').insert(saved).then(({error})=>{
+      if(error){
+        console.error('[JOURNAL] Gagal menyimpan jurnal ke Supabase:', error);
+        this._cache = this._cache.filter(x=>x.id!==saved.id);
+        refreshJournal(); updateJournalSummary();
+        toast('Gagal menyimpan jurnal ke server');
+      }
+    });
+    return saved;
+  },
+  update(id, patch){
+    const idx = this._cache.findIndex(x=>x.id===id);
+    if(idx===-1) return null;
+    const prev = this._cache[idx];
+    this._cache[idx] = Object.assign({}, prev, patch);
+    sb.from('journals').update(patch).eq('id', id).then(({error})=>{
+      if(error){
+        console.error('[JOURNAL] Gagal memperbarui jurnal di Supabase:', error);
+        this._cache[idx] = prev;
+        refreshJournal(); updateJournalSummary();
+        toast('Gagal memperbarui jurnal di server');
+      }
+    });
+    return this._cache[idx];
+  },
+  remove(id){
+    const prevCache = this._cache;
+    this._cache = this._cache.filter(x=>x.id!==id);
+    sb.from('journals').delete().eq('id', id).then(({error})=>{
+      if(error){
+        console.error('[JOURNAL] Gagal menghapus jurnal di Supabase:', error);
+        this._cache = prevCache;
+        refreshJournal(); updateJournalSummary();
+        toast('Gagal menghapus jurnal di server');
+      }
+    });
+  }
+};
+let journalEntries = [];
+function refreshJournal(){ journalEntries = journalService.getAll(); }
+function updateJournalSummary(){
+  const el = document.getElementById('actJurnalSub');
+  if(!el) return;
+  el.textContent = journalEntries.length>0 ? journalEntries.length+' catatan jurnal' : 'Jurnal harian & mood';
+}
+
+let journalFormMood = null, journalEditId = null, journalFilterMood = 'all';
+function openAddJournal(){
+  journalEditId = null; journalFormMood = null;
+  document.getElementById('journalSheetTitle').textContent = 'Jurnal Baru';
+  document.getElementById('journalDateInput').value = todayISO();
+  document.getElementById('journalContentInput').value = '';
+  document.getElementById('journalEditActions').style.display = 'none';
+  document.getElementById('journalSaveBtn').textContent = 'Simpan Jurnal';
+  renderJournalMoodGrid();
+  document.getElementById('journalOverlay').classList.add('show');
+  document.getElementById('journalSheetEl').classList.add('show');
+}
+function openEditJournal(id){
+  const j = journalEntries.find(x=>x.id===id); if(!j) return;
+  journalEditId = id; journalFormMood = j.mood;
+  document.getElementById('journalSheetTitle').textContent = 'Edit Jurnal';
+  document.getElementById('journalDateInput').value = j.entry_date;
+  document.getElementById('journalContentInput').value = j.content || '';
+  document.getElementById('journalEditActions').style.display = 'block';
+  document.getElementById('journalSaveBtn').textContent = 'Simpan Perubahan';
+  renderJournalMoodGrid();
+  document.getElementById('journalOverlay').classList.add('show');
+  document.getElementById('journalSheetEl').classList.add('show');
+}
+function closeJournalSheet(){ document.getElementById('journalOverlay').classList.remove('show'); document.getElementById('journalSheetEl').classList.remove('show'); }
+function renderJournalMoodGrid(){
+  const grid = document.getElementById('journalMoodGrid');
+  grid.innerHTML = JOURNAL_MOODS.map(m=>{
+    const sel = journalFormMood===m.id;
+    return `<div class="cat-cell${sel?' sel':''}" style="${sel?`border-color:${m.color};`:''}" onclick="selectJournalMood('${m.id}')"><div class="ci" style="background:${m.color}22; color:${m.color};">${m.icon}</div><span>${m.label}</span></div>`;
+  }).join('');
+}
+function selectJournalMood(id){ journalFormMood = id; renderJournalMoodGrid(); }
+function saveJournal(){
+  const entry_date = document.getElementById('journalDateInput').value;
+  const content = document.getElementById('journalContentInput').value.trim();
+  if(!content){ toast('Tulis isi jurnal terlebih dahulu'); return; }
+  if(!journalFormMood){ toast('Pilih mood terlebih dahulu'); return; }
+  const btn = document.getElementById('journalSaveBtn');
+  const originalLabel = btn.textContent;
+  btn.disabled = true; btn.textContent = '⏳ Menyimpan...';
+  try{
+    if(journalEditId){
+      journalService.update(journalEditId, { entry_date, content, mood: journalFormMood });
+      toast('Jurnal diperbarui ✓');
+    } else {
+      journalService.create({ entry_date, content, mood: journalFormMood });
+      toast('Jurnal disimpan ✓');
+    }
+  }catch(err){
+    console.error('[JOURNAL] Validasi gagal:', err.message);
+    toast(err.message);
+    btn.disabled=false; btn.textContent=originalLabel;
+    return;
+  }
+  refreshJournal();
+  renderJournalList();
+  updateJournalSummary();
+  closeJournalSheet();
+  btn.disabled=false; btn.textContent=originalLabel;
+}
+function deleteJournalConfirm(){
+  if(!journalEditId) return;
+  journalService.remove(journalEditId);
+  refreshJournal(); renderJournalList(); updateJournalSummary();
+  toast('Jurnal dihapus');
+  closeJournalSheet();
+}
+function setJournalMoodFilter(mood, el){
+  journalFilterMood = mood;
+  document.querySelectorAll('#journalMoodFilterRow .chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  renderJournalList();
+}
+function renderJournalList(){
+  const wrap = document.getElementById('journalListWrap');
+  if(!wrap) return;
+  const q = (document.getElementById('journalSearch')?.value || '').toLowerCase().trim();
+  let list = journalEntries.filter(j=>{
+    if(journalFilterMood!=='all' && j.mood!==journalFilterMood) return false;
+    if(q && !(j.content||'').toLowerCase().includes(q)) return false;
+    return true;
+  });
+  if(list.length===0){
+    wrap.innerHTML = `<div class="empty-state">
+      <div class="ic">📖</div>
+      <h4>Belum ada jurnal</h4>
+      <p>Tulis jurnal harianmu, catat mood dan momen penting hari ini.</p>
+      <button class="cta" onclick="openAddJournal()">+ Tulis Jurnal</button>
+    </div>`;
+    return;
+  }
+  wrap.innerHTML = list.map(journalItemHTML).join('');
+}
+function journalItemHTML(j){
+  const m = journalMoodInfo(j.mood);
+  const snippet = j.content && j.content.length>80 ? j.content.slice(0,80)+'…' : (j.content||'');
+  return `<div class="tx-item" onclick="openEditJournal('${j.id}')">
+    <div class="tx-ic" style="background:${m.color}22; color:${m.color};">${m.icon}</div>
+    <div class="tx-mid">
+      <div class="tx-name">${fmtDateShort(j.entry_date)} · ${m.label}</div>
+      <div class="tx-meta">${snippet}</div>
+    </div>
+  </div>`;
 }
 
 let noteFormCat = null, noteEditId = null, noteFilterCat = 'all', noteFilterArchive = 'active';
@@ -2940,8 +3169,9 @@ function go(name){
   if(name==='reports') renderReports();
   if(name==='home') renderHome();
   if(name==='ai' && !chatSeeded){ seedChat(); }
-  if(name==='activities'){ refreshNotes(); updateActivitySummary(); refreshAgendas(); updateAgendaBadges(); refreshLembur(); updateLemburSummary(); }
+  if(name==='activities'){ refreshNotes(); updateActivitySummary(); refreshAgendas(); updateAgendaBadges(); refreshLembur(); updateLemburSummary(); refreshJournal(); updateJournalSummary(); }
   if(name==='notes'){ refreshNotes(); renderNotesList(); }
+  if(name==='journal'){ refreshJournal(); renderJournalList(); }
   if(name==='agenda'){ refreshAgendas(); renderAgendaList(); }
   if(name==='lembur'){ refreshLembur(); renderLemburList(); updateLemburSummary(); renderLemburMonthlyDashboard(); }
   if(name==='admin-approvals') renderAdminApprovals();

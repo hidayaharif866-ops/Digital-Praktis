@@ -807,7 +807,7 @@ body.dark .insight-card{background:var(--card);}
         <div class="set-row" onclick="go('notes')"><div class="set-ic">📝</div><div class="set-label">Catatan<div class="set-sub" id="actNotesSub">Catatan pribadi & ide</div></div></div>
         <div class="set-row" onclick="go('lembur')"><div class="set-ic">⏰</div><div class="set-label">Lembur<div class="set-sub" id="actLemburSub">Catat jam & pendapatan lembur</div></div></div>
         <div class="set-row" onclick="go('agenda')"><div class="set-ic">📅</div><div class="set-label">Agenda & Pengingat<div class="set-sub" id="actAgendaSub">Jadwal & pengingat keuangan</div></div></div>
-        <div class="set-row" onclick="go('todo')"><div class="set-ic">✅</div><div class="set-label">To-Do<div class="set-sub" id="actTodoSub">Daftar tugas harian</div></div></div>
+        <div class="set-row" onclick="go('todo')"><div class="set-ic">✅</div><div class="set-label">Rutinitas Harian<div class="set-sub" id="actTodoSub">Daftar aktivitas rutin harian</div></div></div>
         <div class="set-row" onclick="go('journal')"><div class="set-ic">📖</div><div class="set-label">Jurnal<div class="set-sub" id="actJurnalSub">Jurnal harian & mood</div></div></div>
       </div>
       <div class="section-row"><h3>Asisten</h3></div>
@@ -850,16 +850,11 @@ body.dark .insight-card{background:var(--card);}
     <div class="topbar">
       <div style="display:flex; align-items:center; gap:10px;">
         <button class="icon-btn" onclick="go('activities')"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M15 19l-7-7 7-7"/></svg></button>
-        <h2>To-Do</h2>
+        <div><h2 style="margin:0;">Rutinitas Harian</h2><div class="sub" id="todoTodayLabel" style="font-size:12px; margin-top:2px;">—</div></div>
       </div>
       <button class="icon-btn" onclick="openAddTodo()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
     </div>
     <div class="content">
-      <div class="filter-row" id="todoFilterRow">
-        <button class="chip active" data-t="active" onclick="setTodoFilter('active',this)">Aktif</button>
-        <button class="chip" data-t="done" onclick="setTodoFilter('done',this)">Selesai</button>
-        <button class="chip" data-t="all" onclick="setTodoFilter('all',this)">Semua</button>
-      </div>
       <div id="todoListWrap" style="margin-top:6px;"></div>
     </div>
   </section>
@@ -1043,11 +1038,10 @@ body.dark .insight-card{background:var(--card);}
       <button class="icon-btn" onclick="closeTodoSheet()"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
     </div>
     <div class="sheet-body">
-      <div class="field"><label>Judul Tugas</label><input class="input-box" id="todoTitleInput" type="text" placeholder="Contoh: Bayar tagihan listrik"></div>
-      <div class="field"><label>Tenggat (opsional)</label><input class="input-box" id="todoDueInput" type="date"></div>
-      <button class="primary-btn" id="todoSaveBtn" onclick="saveTodo()">Simpan Tugas</button>
+      <div class="field"><label>Nama Rutinitas</label><input class="input-box" id="todoTitleInput" type="text" placeholder="Contoh: Olahraga pagi"></div>
+      <button class="primary-btn" id="todoSaveBtn" onclick="saveTodo()">Simpan Rutinitas</button>
       <div id="todoEditActions" style="display:none; margin-top:4px;">
-        <button class="ghost-btn" style="color:var(--expense);" onclick="deleteTodoConfirm()">🗑️ Hapus Tugas</button>
+        <button class="ghost-btn" style="color:var(--expense);" onclick="deleteTodoConfirm()">🗑️ Hapus Rutinitas</button>
       </div>
     </div>
   </div>
@@ -1408,7 +1402,7 @@ function handleGoogleLogin(){ toast('Login Google tersedia setelah OAuth Supabas
 async function handleLogoutToLogin(){
   await authClient.auth.signOut();
   // Bersihkan cache data lokal supaya tidak "bocor" kalau nanti akun lain login di perangkat yang sama
-  dataService._cache = []; notesService._cache = []; agendaService._cache = []; lemburService._cache = []; journalService._cache = []; todoService._cache = [];
+  dataService._cache = []; notesService._cache = []; agendaService._cache = []; lemburService._cache = []; journalService._cache = []; todoService._cache = []; todoLogService._cache = [];
   transactions = []; notes = []; agendas = []; lemburEntries = []; journalEntries = []; todos = [];
   currentProfile = null;
   const adminGroup = document.getElementById('adminMenuGroup'); if(adminGroup) adminGroup.style.display='none';
@@ -1676,6 +1670,7 @@ async function loadUserDataAndRender(){
     lemburSettingsService.init(),
     journalService.init(),
     todoService.init(),
+    todoLogService.init(),
   ]);
   refreshTransactions();
   refreshNotes();
@@ -2299,33 +2294,37 @@ function noteItemHTML(n){
   </div>`;
 }
 
-// ===== Modul Aktivitas: To-Do =====
-function validateTodo(t){
-  if(!t || !t.title || !t.title.trim()) throw new Error('Judul tugas tidak boleh kosong');
+// ===== Modul Aktivitas: Rutinitas Harian (To-Do) =====
+// Konsep: daftar aktivitas rutin (mis. "Sholat Subuh", "Olahraga") yang
+// dicentang setiap hari. Centang tersimpan per-tanggal di tabel
+// todo_logs, sehingga checklist otomatis "kosong lagi" tiap hari baru,
+// dan riwayat penyelesaiannya tetap bisa dihitung (streak/total hari).
+function validateRoutine(t){
+  if(!t || !t.title || !t.title.trim()) throw new Error('Judul rutinitas tidak boleh kosong');
 }
 const todoService = {
   _cache: [],
   async init(){
     this._cache = [];
     if(!currentUser) return this._cache;
-    const { data, error } = await sb.from('todos').select('*').eq('user_id', currentUser.id).order('created_at', { ascending:false });
-    if(error){ console.error('[TODO] Gagal memuat tugas dari Supabase:', error); toast('Gagal memuat tugas dari server'); return this._cache; }
+    const { data, error } = await sb.from('todos').select('*').eq('user_id', currentUser.id).order('created_at', { ascending:true });
+    if(error){ console.error('[TODO] Gagal memuat rutinitas dari Supabase:', error); toast('Gagal memuat rutinitas dari server'); return this._cache; }
     this._cache = data || [];
-    debugLog('[TODO] Loaded', this._cache.length, 'tugas dari Supabase');
+    debugLog('[TODO] Loaded', this._cache.length, 'rutinitas dari Supabase');
     return this._cache;
   },
   getAll(){ return this._cache.slice(); },
   create(t){
     if(!currentUser) throw new Error('Sesi berakhir, silakan login ulang');
-    validateTodo(t);
-    const saved = Object.assign({}, t, { id:crypto.randomUUID(), user_id:currentUser.id, created_at:new Date().toISOString(), done:false });
-    this._cache.unshift(saved);
+    validateRoutine(t);
+    const saved = Object.assign({}, t, { id:crypto.randomUUID(), user_id:currentUser.id, created_at:new Date().toISOString() });
+    this._cache.push(saved);
     sb.from('todos').insert(saved).then(({error})=>{
       if(error){
-        console.error('[TODO] Gagal menyimpan tugas ke Supabase:', error);
+        console.error('[TODO] Gagal menyimpan rutinitas ke Supabase:', error);
         this._cache = this._cache.filter(x=>x.id!==saved.id);
-        refreshTodos(); updateTodoSummary();
-        toast('Gagal menyimpan tugas ke server');
+        refreshTodos(); renderTodoList(); updateTodoSummary();
+        toast('Gagal menyimpan rutinitas ke server');
       }
     });
     return saved;
@@ -2337,10 +2336,10 @@ const todoService = {
     this._cache[idx] = Object.assign({}, prev, patch);
     sb.from('todos').update(patch).eq('id', id).then(({error})=>{
       if(error){
-        console.error('[TODO] Gagal memperbarui tugas di Supabase:', error);
+        console.error('[TODO] Gagal memperbarui rutinitas di Supabase:', error);
         this._cache[idx] = prev;
-        refreshTodos(); updateTodoSummary();
-        toast('Gagal memperbarui tugas di server');
+        refreshTodos(); renderTodoList(); updateTodoSummary();
+        toast('Gagal memperbarui rutinitas di server');
       }
     });
     return this._cache[idx];
@@ -2348,42 +2347,86 @@ const todoService = {
   remove(id){
     const prevCache = this._cache;
     this._cache = this._cache.filter(x=>x.id!==id);
+    todoLogService._cache = todoLogService._cache.filter(l=>l.todo_id!==id);
     sb.from('todos').delete().eq('id', id).then(({error})=>{
       if(error){
-        console.error('[TODO] Gagal menghapus tugas di Supabase:', error);
+        console.error('[TODO] Gagal menghapus rutinitas di Supabase:', error);
         this._cache = prevCache;
-        refreshTodos(); updateTodoSummary();
-        toast('Gagal menghapus tugas di server');
+        refreshTodos(); renderTodoList(); updateTodoSummary();
+        toast('Gagal menghapus rutinitas di server');
       }
     });
   }
 };
+
+// Catatan centang harian: satu baris di todo_logs = "rutinitas X selesai
+// pada tanggal Y". Toggle = insert kalau belum ada, delete kalau sudah ada.
+const todoLogService = {
+  _cache: [],
+  async init(){
+    this._cache = [];
+    if(!currentUser) return this._cache;
+    const { data, error } = await sb.from('todo_logs').select('*').eq('user_id', currentUser.id);
+    if(error){ console.error('[TODO_LOG] Gagal memuat riwayat rutinitas:', error); return this._cache; }
+    this._cache = data || [];
+    return this._cache;
+  },
+  isDoneOn(todoId, dateStr){ return this._cache.some(l=>l.todo_id===todoId && l.entry_date===dateStr); },
+  countDone(todoId){ return this._cache.filter(l=>l.todo_id===todoId).length; },
+  toggle(todoId, dateStr){
+    if(!currentUser) throw new Error('Sesi berakhir, silakan login ulang');
+    const existing = this._cache.find(l=>l.todo_id===todoId && l.entry_date===dateStr);
+    if(existing){
+      this._cache = this._cache.filter(l=>l!==existing);
+      sb.from('todo_logs').delete().eq('id', existing.id).then(({error})=>{
+        if(error){
+          console.error('[TODO_LOG] Gagal batal centang:', error);
+          this._cache.push(existing);
+          renderTodoList();
+          toast('Gagal memperbarui status rutinitas');
+        }
+      });
+    } else {
+      const saved = { id:crypto.randomUUID(), user_id:currentUser.id, todo_id:todoId, entry_date:dateStr, created_at:new Date().toISOString() };
+      this._cache.push(saved);
+      sb.from('todo_logs').insert(saved).then(({error})=>{
+        if(error){
+          console.error('[TODO_LOG] Gagal menyimpan centang:', error);
+          this._cache = this._cache.filter(l=>l!==saved);
+          renderTodoList();
+          toast('Gagal menyimpan status rutinitas');
+        }
+      });
+    }
+  }
+};
+
 let todos = [];
 function refreshTodos(){ todos = todoService.getAll(); }
 function updateTodoSummary(){
   const el = document.getElementById('actTodoSub');
   if(!el) return;
-  const activeCount = todos.filter(t=>!t.done).length;
-  el.textContent = activeCount>0 ? activeCount+' tugas belum selesai' : 'Daftar tugas harian';
+  if(todos.length===0){ el.textContent = 'Daftar aktivitas rutin harian'; return; }
+  const today = todayISO();
+  const doneToday = todos.filter(t=>todoLogService.isDoneOn(t.id, today)).length;
+  el.textContent = `${doneToday}/${todos.length} rutinitas selesai hari ini`;
 }
 
-let todoEditId = null, todoFilterMode = 'active';
+let todoEditId = null;
 function openAddTodo(){
   todoEditId = null;
-  document.getElementById('todoSheetTitle').textContent = 'Tugas Baru';
+  document.getElementById('todoSheetTitle').textContent = 'Rutinitas Baru';
   document.getElementById('todoTitleInput').value = '';
-  document.getElementById('todoDueInput').value = '';
   document.getElementById('todoEditActions').style.display = 'none';
-  document.getElementById('todoSaveBtn').textContent = 'Simpan Tugas';
+  document.getElementById('todoSaveBtn').textContent = 'Simpan Rutinitas';
   document.getElementById('todoOverlay').classList.add('show');
   document.getElementById('todoSheetEl').classList.add('show');
 }
 function openEditTodo(id){
   const t = todos.find(x=>x.id===id); if(!t) return;
   todoEditId = id;
-  document.getElementById('todoSheetTitle').textContent = 'Edit Tugas';
+  document.getElementById('todoSheetTitle').textContent = 'Edit Rutinitas';
   document.getElementById('todoTitleInput').value = t.title;
-  document.getElementById('todoDueInput').value = t.due_date || '';
   document.getElementById('todoEditActions').style.display = 'block';
   document.getElementById('todoSaveBtn').textContent = 'Simpan Perubahan';
   document.getElementById('todoOverlay').classList.add('show');
@@ -2392,18 +2435,17 @@ function openEditTodo(id){
 function closeTodoSheet(){ document.getElementById('todoOverlay').classList.remove('show'); document.getElementById('todoSheetEl').classList.remove('show'); }
 function saveTodo(){
   const title = document.getElementById('todoTitleInput').value.trim();
-  const due_date = document.getElementById('todoDueInput').value || null;
-  if(!title){ toast('Isi judul tugas terlebih dahulu'); return; }
+  if(!title){ toast('Isi judul rutinitas terlebih dahulu'); return; }
   const btn = document.getElementById('todoSaveBtn');
   const originalLabel = btn.textContent;
   btn.disabled = true; btn.textContent = '⏳ Menyimpan...';
   try{
     if(todoEditId){
-      todoService.update(todoEditId, { title, due_date });
-      toast('Tugas diperbarui ✓');
+      todoService.update(todoEditId, { title });
+      toast('Rutinitas diperbarui ✓');
     } else {
-      todoService.create({ title, due_date });
-      toast('Tugas ditambahkan ✓');
+      todoService.create({ title });
+      toast('Rutinitas ditambahkan ✓');
     }
   }catch(err){
     console.error('[TODO] Validasi gagal:', err.message);
@@ -2421,55 +2463,44 @@ function deleteTodoConfirm(){
   if(!todoEditId) return;
   todoService.remove(todoEditId);
   refreshTodos(); renderTodoList(); updateTodoSummary();
-  toast('Tugas dihapus');
+  toast('Rutinitas dihapus');
   closeTodoSheet();
 }
-function toggleTodoDone(id, event){
+function toggleTodoDoneToday(id, event){
   if(event) event.stopPropagation();
-  const t = todos.find(x=>x.id===id); if(!t) return;
-  todoService.update(id, { done: !t.done });
-  refreshTodos(); renderTodoList(); updateTodoSummary();
-}
-function setTodoFilter(mode, el){
-  todoFilterMode = mode;
-  document.querySelectorAll('#todoFilterRow .chip').forEach(c=>c.classList.remove('active'));
-  el.classList.add('active');
-  renderTodoList();
+  todoLogService.toggle(id, todayISO());
+  renderTodoList(); updateTodoSummary();
 }
 function renderTodoList(){
   const wrap = document.getElementById('todoListWrap');
   if(!wrap) return;
-  let list = todos.filter(t=>{
-    if(todoFilterMode==='active' && t.done) return false;
-    if(todoFilterMode==='done' && !t.done) return false;
-    return true;
-  });
-  list.sort((a,b)=>{
-    const doneDiff = (a.done?1:0) - (b.done?1:0);
-    if(doneDiff!==0) return doneDiff;
-    return new Date(b.created_at) - new Date(a.created_at);
-  });
-  if(list.length===0){
+  const dateLabel = document.getElementById('todoTodayLabel');
+  if(dateLabel) dateLabel.textContent = fmtDateShort(todayISO());
+  if(todos.length===0){
     wrap.innerHTML = `<div class="empty-state">
       <div class="ic">✅</div>
-      <h4>${todoFilterMode==='done' ? 'Belum ada tugas selesai' : 'Belum ada tugas'}</h4>
-      <p>Tambahkan daftar tugas harianmu supaya tidak ada yang terlewat.</p>
-      ${todoFilterMode!=='done' ? `<button class="cta" onclick="openAddTodo()">+ Tambah Tugas</button>` : ''}
+      <h4>Belum ada rutinitas</h4>
+      <p>Tambahkan aktivitas yang ingin kamu lakukan setiap hari, misalnya olahraga atau baca buku.</p>
+      <button class="cta" onclick="openAddTodo()">+ Tambah Rutinitas</button>
     </div>`;
     return;
   }
-  wrap.innerHTML = list.map(todoItemHTML).join('');
+  const today = todayISO();
+  wrap.innerHTML = todos.map(t=>todoItemHTML(t, today)).join('');
 }
-function todoItemHTML(t){
-  const dueLabel = t.due_date ? fmtDateShort(t.due_date) : 'Tanpa tenggat';
+function todoItemHTML(t, today){
+  const done = todoLogService.isDoneOn(t.id, today);
+  const totalDone = todoLogService.countDone(t.id);
   return `<div class="tx-item" onclick="openEditTodo('${t.id}')">
-    <div class="tx-ic" style="background:${t.done?'#10B98122':'#3B82F622'}; color:${t.done?'#10B981':'#3B82F6'}; cursor:pointer;" onclick="toggleTodoDone('${t.id}', event)">${t.done?'✔️':'⬜'}</div>
+    <div class="tx-ic" style="background:${done?'#10B98122':'#3B82F622'}; color:${done?'#10B981':'#3B82F6'}; cursor:pointer;" onclick="toggleTodoDoneToday('${t.id}', event)">${done?'✔️':'⬜'}</div>
     <div class="tx-mid">
-      <div class="tx-name" style="${t.done?'text-decoration:line-through; opacity:0.6;':''}">${t.title}</div>
-      <div class="tx-meta">${dueLabel}</div>
+      <div class="tx-name" style="${done?'text-decoration:line-through; opacity:0.6;':''}">${t.title}</div>
+      <div class="tx-meta">${totalDone>0 ? totalDone+' hari diselesaikan' : 'Belum pernah diselesaikan'}</div>
     </div>
   </div>`;
 }
+
+// ===== Modul Aktivitas: Agenda & Pengingat Keuangan =====
 
 // ===== Modul Aktivitas: Agenda & Pengingat Keuangan =====
 // ---------------------------------------------------------------------------
